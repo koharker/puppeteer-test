@@ -9,9 +9,10 @@ const scrapeLogic = async (res) => {
             "--single-process",
             "--no_zygote",
         ],
-        executablePath: process.env.NODE_ENV === 'production'
-            ? process.env.PUPPETEER_EXECUTABLE_PATH
-            :  puppeteer.executablePath(),
+        executablePath:
+            process.env.NODE_ENV === "production"
+                ? process.env.PUPPETEER_EXECUTABLE_PATH
+                :  puppeteer.executablePath(),
     });
     try {
         // Launch the browser and open a new blank page
@@ -30,7 +31,9 @@ const scrapeLogic = async (res) => {
         // Wait and click on first result
         const searchResultSelector = '.devsite-result-item-link';
         await page.waitForSelector(searchResultSelector);
-        await page.click(searchResultSelector);
+        await page.evaluate((selector) => {
+            document.querySelector(selector).click();
+        }, searchResultSelector);
 
         // Locate the full title with a unique string
         const textSelector = await page.waitForSelector(
