@@ -17,7 +17,6 @@ const scrapeLogic = async (res) => {
         // Launch the browser and open a new blank page
 
         const page = await browser.newPage();
-        throw new Error("whoops!");
 
         // Navigate the page to a URL
         await page.goto('https://developer.chrome.com/');
