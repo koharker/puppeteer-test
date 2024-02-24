@@ -44,6 +44,7 @@ const vexflowNoteRender = async (req, res) => {
         const notesInVexflowFormat = reformatNoteRequest(notes);
         const parsedVexflowNoteObjects  = parseVexflowNoteArray(notesInVexflowFormat)
         const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjects);
+        const vexflowNoteObjectArrayHtmlString = generateVexflowNoteObjectArrayHtmlString(parsedVexflowNoteObjects);
 
         console.log(parsedVexflowNoteObjects[0].string)
         // Launch the browser and open a new blank page
@@ -93,16 +94,7 @@ const vexflowNoteRender = async (req, res) => {
                     stave.setContext(context).draw();
             
             
-                    const notes = [
-                        new StaveNote({
-                        keys: ['${parsedVexflowNoteObjects[0].string}'],
-                        duration: 'h'
-                        }).addModifier(new Accidental('${parsedVexflowNoteObjects[0].accidental}')),
-                        new StaveNote({
-                        keys: ['g/5'],
-                        duration: 'h'
-                        })
-                    ];
+                    const notes = [${vexflowNoteObjectArrayHtmlString}];
             
                     const beams = Beam.generateBeams(notes);
                     Formatter.FormatAndDraw(context, stave, notes);
@@ -157,19 +149,6 @@ const vexflowNoteRender = async (req, res) => {
 };
 
 /*
-exports.handler = async (event, context) => {
-    // Extract query parameter
-    const data = event.queryStringParameters.data || 'Default data if none provided';
-
-    // Setup Puppeteer
-    const browser = await chromium.puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-    });
-
     const page = await browser.newPage();
 
     // Your page content setup goes here, including VexFlow initialization
@@ -219,11 +198,11 @@ exports.handler = async (event, context) => {
       
               const notes = [
                 new StaveNote({
-                  keys: ['bb/4'],
+                  keys: ['gn/4'],
                   duration: 'h'
-                }).addModifier(new Accidental('b')),
+                }).addModifier(new Accidental('n')),
                 new StaveNote({
-                  keys: ['g/5'],
+                  keys: ['c/5'],
                   duration: 'h'
                 })
               ];
@@ -330,6 +309,24 @@ function parseVexflowNoteArray(vexflowNoteArray){
 
     return vexflowNoteObjectArray;
 };
+
+
+
+
+function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
+    const htmlString = vexflowNoteObjectArray.map(noteObj => {
+        let newNoteString = `new StaveNote({keys: ['${noteObj.string}'], duration: 'h'})`
+        if (noteObj.accidental) {
+            newNoteString  += `.addModifier(new Accidental('${noteObj.accidental}'))`
+        }
+        return newNoteString
+    }).join();
+
+    console.log(htmlString);
+    return htmlString;
+}
+
+
 
 
 function packageVexflowNoteObjectArray(vexflowNoteObjectArray) {
