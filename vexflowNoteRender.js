@@ -1,6 +1,19 @@
 //const chromium = require('chrome-aws-lambda');
 const puppeteer = require("puppeteer");
+const Vex = require("vexflow");
 require("dotenv").config();
+
+const {
+    Renderer,
+    Beam,
+    Stave,
+    Formatter,
+    StaveNote,
+    Accidental,
+    StaveLine
+} = Vex.Flow;
+
+
 
 const vexflowNoteRender = async (req, res) => {
     const {
@@ -29,7 +42,10 @@ const vexflowNoteRender = async (req, res) => {
 
     try {
         const notesInVexflowFormat = reformatNoteRequest(notes);
+        const parsedVexflowNoteObjects  = parseVexflowNoteArray(notesInVexflowFormat)
+        const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjects);
 
+        console.log(parsedVexflowNoteObjects[0].string)
         // Launch the browser and open a new blank page
         const page = await browser.newPage();
         
@@ -79,9 +95,9 @@ const vexflowNoteRender = async (req, res) => {
             
                     const notes = [
                         new StaveNote({
-                        keys: ['bb/4'],
+                        keys: ['${parsedVexflowNoteObjects[0].string}'],
                         duration: 'h'
-                        }).addModifier(new Accidental('b')),
+                        }).addModifier(new Accidental('${parsedVexflowNoteObjects[0].accidental}')),
                         new StaveNote({
                         keys: ['g/5'],
                         duration: 'h'
@@ -127,11 +143,11 @@ const vexflowNoteRender = async (req, res) => {
             isBase64Encoded: true,
         };
 
-        //res.type('image/png').send(imageBuffer);
+        res.type('image/png').send(imageBuffer);
 
         const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormat || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
 
-        res.send(queryDetails);
+        //res.send(queryDetails);
     } catch(e) {
         console.error(e);
         res.send(`Something went wrong: ${e}`)
@@ -259,43 +275,34 @@ exports.handler = async (event, context) => {
 
 
 function reformatNoteRequest(noteReq)  {
-    console.log(noteReq)
-    console.log(noteReq)
     const sanitizedNoteRequest =  sanitizeNoteRequest(noteReq);
-    
     const noteArrayInVexflowSyntax  =  changeNoteRequestSyntaxToVexflow(sanitizedNoteRequest)
     
     validateNoteSyntax(noteArrayInVexflowSyntax);
-    console.log(noteArrayInVexflowSyntax)
     
     return noteArrayInVexflowSyntax;
 }
 
 function changeNoteRequestSyntaxToVexflow(noteReq) {
-    console.log(noteReq)
     const noteReqs = noteReq.split(",");
-    console.log(noteReqs)
     let vexflowNoteReqs = noteReqs.map((note) =>  {
         const rxLetter = /\D*/
-        console.log(note);
-        return note.replace(rxLetter, (match) => match + '/')
+        return note.replace(rxLetter, (match) => match + '/').replace(/\*/g, "#")
     });
 
-    console.log(vexflowNoteReqs)
     return vexflowNoteReqs;
 };
 
 function sanitizeNoteRequest(noteReq) {
     const lowercaseNoteReq = noteReq.toLowerCase();
     const sanitizedNoteReq = lowercaseNoteReq.replace(';', ",");
-    console.log(sanitizedNoteReq)
+
     return sanitizedNoteReq;
 };
 
 function validateNoteSyntax(vexflowNoteArray) {
-    const rxVexflowNoteSyntax  = /^[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\/\d$/;
+    const rxVexflowNoteSyntax  = /^[a-g](b{0,2}?|#{0,2}?|n{0,1}?)\/\d$/;
     vexflowNoteArray.map(note => {
-        console.log(note)
         if(!rxVexflowNoteSyntax.test(note)) {
             throw new Error(
                 `Note: ${note} is invalid.`
@@ -312,6 +319,7 @@ function parseVexflowNoteArray(vexflowNoteArray){
         const accidental = accidentalArray.join('');
         
         const vexflowNoteObject = {
+            string: noteString,
         	letter: letter,
         	accidental: accidental,
        		octave: +octave
@@ -324,6 +332,47 @@ function parseVexflowNoteArray(vexflowNoteArray){
 };
 
 
-function packageVexflowNoteObjectArray(vexflowNoteObjectArray) {}
+function packageVexflowNoteObjectArray(vexflowNoteObjectArray) {
+    /*
+    const notes = [
+        new StaveNote({
+          keys: ['bb/4'],
+          duration: 'h'
+        }).addModifier(new Accidental('b')),
+        new StaveNote({
+          keys: ['g/5'],
+          duration: 'h'
+        })
+      ];
+*/
+    console.log(vexflowNoteObjectArray)
+    const vexnotes = vexflowNoteObjectArray.map((noteObj) => {
+        console.log(noteObj)
+        const testnote  = 'b/4'
+        const testnoteobj = {
+            string: 'b/4'
+        }
+        console.log(testnote)
+        console.log(testnoteobj.string)
+        console.log(noteObj.string)
+        console.log('end test notes')
+
+        const testvexnote = {
+            keys: [testnoteobj.string]
+        }
+
+        console.log(testvexnote.keys)
+        const _note = new StaveNote({
+            keys: [noteObj.string],
+            duration: 'h'
+        });
+        console.log(_note)
+        noteObj.accidental && _note.addModifier(new Accidental(noteObj.accidental));
+
+        return _note;
+    })
+
+    return vexnotes;
+}
 
 module.exports = { vexflowNoteRender };
