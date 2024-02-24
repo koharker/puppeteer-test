@@ -14,8 +14,6 @@ const vexflowNoteRender = async (req, res) => {
     // d4,c3 puts notes on top of one another
     // d4;c3 puts notes next to one another
 
-    let notesInVexflowFormat;
-
     const browser = await puppeteer.launch({
         args: [
             "--disable-setuid-sandbox",
@@ -30,7 +28,7 @@ const vexflowNoteRender = async (req, res) => {
     });
 
     try {
-        notesInVexflowFormat = reformatNoteRequest(notes);
+        const notesInVexflowFormat = reformatNoteRequest(notes);
 
         // Launch the browser and open a new blank page
         const page = await browser.newPage();
@@ -306,13 +304,26 @@ function validateNoteSyntax(vexflowNoteArray) {
     })
 } 
 
-function parseVexflowNoteStrings(){
+function parseVexflowNoteArray(vexflowNoteArray){
     //separate the note strings into 
-    const vexflowNoteObject = {
-        letter: null,
-        accidental: null,
-        octave: null,
-    };
+    const vexflowNoteObjectArray = vexflowNoteArray.map((noteString) => {
+        const [ note, octave ] = noteString.split('/');
+        const [ letter, ...accidentalArray ]  = note.split('');
+        const accidental = accidentalArray.join('');
+        
+        const vexflowNoteObject = {
+        	letter: letter,
+        	accidental: accidental,
+       		octave: +octave
+        };
+
+        return vexflowNoteObject;
+    });
+
+    return vexflowNoteObjectArray;
 };
+
+
+function packageVexflowNoteObjectArray(vexflowNoteObjectArray) {}
 
 module.exports = { vexflowNoteRender };
