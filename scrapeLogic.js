@@ -16,7 +16,7 @@ const scrapeLogic = async (res) => {
     });
     try {
         // Launch the browser and open a new blank page
-
+        //throw new Error('test error');
         const page = await browser.newPage();
 
         // Navigate the page to a URL
