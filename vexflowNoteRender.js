@@ -88,7 +88,7 @@ const vexflowNoteRender = async (req, res) => {
                     const stave = new Stave(10, -5, 150);
             
                     // Add a clef and time signature.
-                    stave.addClef('treble');
+                    stave.addClef('${clef}');
             
                     // Connect it to the rendering context and draw!
                     stave.setContext(context).draw();
@@ -135,11 +135,11 @@ const vexflowNoteRender = async (req, res) => {
             isBase64Encoded: true,
         };
 
-        res.type('image/png').send(imageBuffer);
+        //res.type('image/png').send(imageBuffer);
 
         const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormat || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
 
-        //res.send(queryDetails);
+        res.send(queryDetails);
     } catch(e) {
         console.error(e);
         res.send(`Something went wrong: ${e}`)
@@ -252,6 +252,11 @@ const vexflowNoteRender = async (req, res) => {
 
 */
 
+function parseRequest(noteRequest, rhythmRequest, clefRequest, scaleRequest) {
+    const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
+};
+
+
 
 function reformatNoteRequest(noteReq)  {
     const sanitizedNoteRequest =  sanitizeNoteRequest(noteReq);
@@ -324,7 +329,106 @@ function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
 
     console.log(htmlString);
     return htmlString;
+};
+
+
+
+/** Logic for parsing the note request */
+
+
+function parseNoteRequest(noteRequest) {
+    validateNoteRequestSyntax(noteRequest);  //throws an error if note request
+    const { extractedNotes, extractedSeparators } = extractNotesAndSeparatorsFromNoteRequest(noteRequest);
+};
+
+function validateNoteRequestSyntax(noteRequest) {
+    const rxValidNoteRequestSyntax = /^[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d((,|t|s|\||~|l)[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)*$/g
+    if(!rxValidNoteRequestSyntax.test(noteRequest)) {
+        throw new Error(
+            `Note request contains invalid syntax: ${noteRequest} is invalid.`
+        )
+    }
 }
+
+function extractNotesAndSeparatorsFromNoteRequest(noteRequest)  {
+    const extractedNotes = extractNotesFromNoteRequest(noteRequest);
+    const extractedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
+    return {extractedNotes, extractedSeparators};
+};
+
+function extractNotesFromNoteRequest(noteRequest) {
+    const rxValidNoteSyntax = /[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d/g
+    const notes = noteRequest.match(rxValidNoteSyntax);
+    return notes;
+};
+
+function extractSeparatorsFromNoteRequest(noteRequest) {
+    const validNoteSeparators = [
+        ',', //default separatorindicating a new note in the sequence
+        't', //connects sequential notes with a tie
+        's', //connects sequential notes with a slur
+        'l', //connects sequential notes with a solid line
+        '~', //connects sequential notes with a gliss
+        '|', //connects sequential notes with a barline
+        ';'  //starts a new sequence of notes in another voice
+    ];
+
+    const validNoteSeparatorRegExpString = escapeRegExpChars(validNoteSeparators).join('|');
+    const rxValidNoteSeparators = new RegExp(validNoteSeparatorRegExpString, 'g');
+    const requestedNoteSeparators = noteRequest.match(rxValidNoteSeparators);
+
+	return requestedNoteSeparators;
+};
+
+
+
+
+/**
+ * Escapes RegExp special characters within strings. This function can take multiple arguments,
+ * each of which can be either a string or an array of strings. It performs a replace operation
+ * on each string to escape all RegExp special characters, then returns the results in the same
+ * format as provided (i.e., a single string for a single string input, or an array of strings
+ * if provided with an array or multiple arguments).
+ *
+ * @param {...(string|string[])} args - A variable number of arguments where each can be either
+ *                                      a string or an array of strings.
+ * @returns {(string|string[]|Array)} - The input argument(s) with all RegExp special characters
+ *                                      escaped. The return type matches the format of the input:
+ *                                      - A single string if a single string was provided.
+ *                                      - An array of strings if the input was an array or multiple
+ *                                        arguments were provided.
+ */
+function escapeRegExpChars(...args) {
+    // Helper function to escape special characters in a string
+    const escapeString = (str) => str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+  
+    // Process each argument
+    const processedArgs = args.map(arg => {
+      if (Array.isArray(arg)) {
+        // If the argument is an array, escape each string in the array
+        return arg.map(item => typeof item === 'string' ? escapeString(item) : item);
+      } else if (typeof arg === 'string') {
+        // If the argument is a string, escape it
+        return escapeString(arg);
+      } else {
+        // Return the argument unchanged if it's neither a string nor an array
+        return arg;
+      }
+    });
+  
+    // If there's only one argument and it's not an array, return it directly
+    if (processedArgs.length === 1 && !Array.isArray(args[0])) {
+      return processedArgs[0];
+    }
+  
+    // Return the processed arguments. If only one argument and it's an array, return just the array.
+    return processedArgs.length === 1 ? processedArgs[0] : processedArgs;
+};
+  
+
+
+
+function splitByAny(string, separatorArray) {}
 
 
 
