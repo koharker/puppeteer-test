@@ -252,8 +252,18 @@ const vexflowNoteRender = async (req, res) => {
 
 */
 
-function parseRequest(noteRequest, rhythmRequest, clefRequest, scaleRequest) {
+function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
+    const { parsedNotes, parsedSeparators, parsedRhythm, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
+    const [ vexflowNotes, vexflowSeparators ] = convertParsedNoteRequestSyntaxToVexflow(parsedNotes);
+}
+
+function convertParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
+    
+}
+
+function parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
     const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
+    return {parsedNotes, parsedSeparators, parsedRhythm}
 };
 
 
@@ -339,10 +349,12 @@ function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
 function parseNoteRequest(noteRequest) {
     validateNoteRequestSyntax(noteRequest);  //throws an error if note request
     const { extractedNotes, extractedSeparators } = extractNotesAndSeparatorsFromNoteRequest(noteRequest);
+    const [parsedNotes, parsedSeparators] = [extractedNotes, extractedSeparators];
+    return {parsedNotes, parsedSeparators}
 };
 
 function validateNoteRequestSyntax(noteRequest) {
-    const rxValidNoteRequestSyntax = /^[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d((,|t|s|\||~|l)[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)*$/g
+    const rxValidNoteRequestSyntax = /^(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r)((,|t|s|\||~|l)(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r))*$/g
     if(!rxValidNoteRequestSyntax.test(noteRequest)) {
         throw new Error(
             `Note request contains invalid syntax: ${noteRequest} is invalid.`
@@ -351,13 +363,13 @@ function validateNoteRequestSyntax(noteRequest) {
 }
 
 function extractNotesAndSeparatorsFromNoteRequest(noteRequest)  {
-    const extractedNotes = extractNotesFromNoteRequest(noteRequest);
-    const extractedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
-    return {extractedNotes, extractedSeparators};
+    const parsedNotes = extractNotesFromNoteRequest(noteRequest);
+    const parsedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
+    return {parsedNotes, parsedSeparators};
 };
 
 function extractNotesFromNoteRequest(noteRequest) {
-    const rxValidNoteSyntax = /[a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d/g
+    const rxValidNoteSyntax = /([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r/g
     const notes = noteRequest.match(rxValidNoteSyntax);
     return notes;
 };
