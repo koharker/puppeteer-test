@@ -258,9 +258,18 @@ function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, clefRequest, 
 }
 
 function convertParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
-    
+    const {vexflowNotes, vexflowRests} = parseNotesAndRestsFromParsedNoteRequest(parsedNotes)
 }
 
+function parseNotesAndRestsFromParsedNoteRequest(parsedNotes) {
+
+
+}
+
+
+
+
+/** logic for parsing http request */
 function parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
     const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
     return {parsedNotes, parsedSeparators, parsedRhythm}
