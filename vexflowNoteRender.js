@@ -254,17 +254,97 @@ const vexflowNoteRender = async (req, res) => {
 
 function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
     const { parsedNotes, parsedSeparators, parsedRhythm, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
-    const [ vexflowNotes, vexflowSeparators ] = convertParsedNoteRequestSyntaxToVexflow(parsedNotes);
+    const { vexflowNotes, vexflowAccidentals, vexflowRests } = processParsedNoteRequestSyntaxToVexflow(parsedNotes);
 }
 
-function convertParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
-    const {vexflowNotes, vexflowRests} = parseNotesAndRestsFromParsedNoteRequest(parsedNotes)
+// Main function to process notes and clef
+function processParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
+    const  { vexflowNotes, vexflowRests} = convertNotesAndRestsFromParsedNoteRequestToVexflow(parsedNotes)
+    const vexflowAccidentals = extractAccidentals(vexflowNotes)
+
+    return { vexflowNotes, vexflowAccidentals, vexflowRests}
 }
 
-function parseNotesAndRestsFromParsedNoteRequest(parsedNotes) {
-
-
+function convertNotesAndRestsFromParsedNoteRequestToVexflow(parsedNotes) { 
+    const vexflowNotes  = convertToVexflowNotes(parsedNotes)
+    const vexflowRests = generateRestIndicators(parsedNotes);
+    return { vexflowNotes, vexflowRests };
+    
 }
+
+// Converts parsed notes to VexFlow notes, handling rests separately
+function convertToVexflowNotes(parsedNotes) {
+    return parsedNotes.map(note => note === 'r' ? 'b/4' : convertNoteToVexflowNoteSyntax(note));
+}
+
+function  convertNoteToVexflowNoteSyntax(note) {
+    const rxLetter = /\D*/
+    return note.replace(rxLetter, (match) => match + '/').replace(/\*/g, "#")
+}
+
+// Generates the rest indicators for VexFlow, 'n' for notes and 'r' for rests
+function generateRestIndicators(parsedNotes) {
+    return parsedNotes.map(note => note === 'r' ? 'r' : 'n');
+}
+
+function extractAccidentals(parsedNotes) {
+    const vexflowAccidentals = parsedNotes.map(note => {
+        return note.length === 5 ? note[1] + note[2] : note.length === 4 ? note[1]  : '' ;
+    })
+    return vexflowAccidentals
+}
+
+// Transposes a single note based on the clef
+function transposeNote(note, clef) {
+    const bassClefTransposition = {
+        'c': 'a', 'd': 'b', 'e': 'c', 'f': 'd', 'g': 'e', 'a': 'f', 'b': 'g',
+        'gb': 'eb', // Add more specific rules as needed
+    };
+
+    if (clef === 'bass') {
+        const noteLetter = note[0];
+        const accidental = note.length === 3 ? note[1] : '';
+        let octave = parseInt(note[note.length - 1], 10);
+
+        // Adjust the note and octave
+        const newNote = bassClefTransposition[noteLetter.toLowerCase()] + accidental;
+        octave = (octave - 1) < 0 ? 4 : octave - 1; // Simplistic octave adjustment for the example
+
+        return newNote + '/' + octave;
+    }
+
+    // Add cases for other clefs if necessary
+    return note;
+}
+
+
+
+
+function processNotes(parsedNotes, parsedClef) {
+    const vexflowNotes = convertToVexflowNotes(parsedNotes, parsedClef);
+    const vexflowRests = generateRestIndicators(parsedNotes);
+
+    return { vexflowNotes, vexflowRests };
+}
+
+// Example usage
+const parsedNotes = ['c4', 'r', 'gb3', 'r', 'd4'];
+const parsedClef = 'bass';
+const { vexflowNotes, vexflowRests } = processNotes(parsedNotes, parsedClef);
+
+console.log(vexflowNotes);
+console.log(vexflowRests);
+
+
+
+function blahblah(parsedNotes) {
+    const notesInVexflowNoteSyntax = parsedNotes.map(note => {
+        return convertNotesToVexflowNoteSyntax(note)
+    })
+    //transposeNotesToVexflowOctave
+}
+
+
 
 
 
