@@ -259,7 +259,7 @@ const vexflowNoteRender = async (req, res) => {
 */
 
 function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
-    const { parsedNotes, parsedSeparators, parsedRhythm, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
+    const { parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
     const { vexflowNotes, vexflowAccidentals, vexflowRests } = processParsedNoteRequestSyntaxToVexflow(parsedNotes);
     const { vexflowDurations } = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests)
     const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowRests, vexflowDurations)
@@ -361,21 +361,21 @@ console.log(vexflowRests);
 
 
 
-/** logic for parsing http request */
+/** PARSE HTTP REQUEST - Logic for parsing http request */
 function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
-    const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
-    const parsedRhythm = parseRhythmRequest(rhythmRequest);
-    return {parsedNotes, parsedSeparators, parsedRhythm}
+    const {parsedNotes, parsedNoteSeparators} = parseNoteRequest(noteRequest);
+    const { parsedRhythm, parsedRhythmSeparators } = parseRhythmRequest(rhythmRequest);
+    return {parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators}
 };
 
 
-/** Logic for parsing the note request */
+/** PARSE NOTE REQUEST - Logic for parsing the note request */
 
 function parseNoteRequest(noteRequest) {
     validateNoteRequestSyntax(noteRequest);  //throws an error if note request
     const { extractedNotes, extractedSeparators } = extractNotesAndSeparatorsFromNoteRequest(noteRequest);
-    const [parsedNotes, parsedSeparators] = [extractedNotes, extractedSeparators];
-    return {parsedNotes, parsedSeparators}
+    const [parsedNotes, parsedNoteSeparators] = [extractedNotes, extractedSeparators];
+    return {parsedNotes, parsedNoteSeparators}
 };
 
 function validateNoteRequestSyntax(noteRequest) {
@@ -388,9 +388,9 @@ function validateNoteRequestSyntax(noteRequest) {
 }
 
 function extractNotesAndSeparatorsFromNoteRequest(noteRequest)  {
-    const parsedNotes = extractNotesFromNoteRequest(noteRequest);
-    const parsedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
-    return {parsedNotes, parsedSeparators};
+    const extractedNotes = extractNotesFromNoteRequest(noteRequest);
+    const extractedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
+    return {extractedNotes, extractedSeparators};
 };
 
 function extractNotesFromNoteRequest(noteRequest) {
@@ -417,14 +417,50 @@ function extractSeparatorsFromNoteRequest(noteRequest) {
 	return requestedNoteSeparators;
 };
 
-/** Logic for parsing the rhythm request */
+/** PARSE RHYTHM REQUEST - Logic for parsing the rhythm request */
 function parseRhythmRequest(rhythmRequest) {
     validateRhythmRequestSyntax(rhythmRequest); //throws an error if invalid syntax
-}
+    const { extractedRhythm, extractedRhythmSeparators } = extractRhythmAndSeparatorsFromRhythmRequest(rhythmRequest);
+    const [parsedRhythm, parsedRhythmSeparators] = [extractedRhythm, extractedRhythmSeparators];
+    return {parsedRhythm, parsedRhythmSeparators}
+};
 
 function validateRhythmRequestSyntax(rhythmRequest) {
-    const rxValidRhythmRequestSyntax = /h/g;
+    const rxValidRhythmRequestSyntax = /((w|h|q|8|16|32)\.{0,2})((,|;|\|)(w|h|q|8|16|32)\.{0,2})*/g;
+    if(!rxValidRhythmRequestSyntax.test(rhythmRequest)) {
+        throw new Error(
+            `Rhythm request contains invalid syntax: ${rhythmRequest} is invalid.`
+        )
+    }
 }
+
+function extractRhythmAndSeparatorsFromRhythmRequest(rhythmRequest) {
+    const extractedRhythm = extractRhythmFromRhythmRequest(rhythmRequest);
+    const extractedRhythmSeparators = extractSeparatorsFromRhythmRequest(rhythmRequest);
+    return {extractedRhythm, extractedRhythmSeparators};
+};
+
+function extractRhythmFromRhythmRequest(rhythmRequest) {
+    const rxValidRhythmSyntax = /(w|h|q|8|16|32)\.{0,2}/g
+    const rhythm = rhythmRequest.match(rxValidRhythmSyntax);
+    return rhythm;
+};
+
+function extractSeparatorsFromRhythmRequest(rhythmRequest) {
+    const validRhythmSeparators = [
+        ',', //default separatorindicating a new note duration in the sequence
+        '|', //connects sequential notes with a barline
+        ';'  //starts a new sequence of rhythms in another voice
+    ];
+
+    const validRhythmSeparatorRegExpString = escapeRegExpChars(validRhythmSeparators).join('|');
+    const rxValidRhythmSeparators = new RegExp(validRhythmSeparatorRegExpString, 'g');
+    const requestedRhythmSeparators = rhythmRequest.match(rxValidRhythmSeparators);
+
+	return requestedRhythmSeparators;
+};
+
+
 
 /** BEGIN OLD PARSING LOGIC (slowly deprecating old parsing logic...)*/
 function reformatNoteRequest(noteReq)  {
