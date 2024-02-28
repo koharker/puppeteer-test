@@ -45,14 +45,16 @@ const vexflowNoteRender = async (req, res) => {
     });
 
     try {
-        //const {} = convertRequestSyntaxToVexflow(notes, rhythm, articulations, noteheads, clef, key, time, scale)
+        const vexflowNoteObjectArray = convertRequestSyntaxToVexflow(notes, rhythm, articulations, noteheads, clef, key, time, scale)
 
-        const notesInVexflowFormatOLD = reformatNoteRequest(notes);
-        const parsedVexflowNoteObjectsOLD  = parseVexflowNoteArray(notesInVexflowFormatOLD)
-        const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjectsOLD);
-        const vexflowNoteObjectArrayHtmlString = generateVexflowNoteObjectArrayHtmlString(parsedVexflowNoteObjectsOLD);
+        //const notesInVexflowFormatOLD = reformatNoteRequest(notes);
+        //const parsedVexflowNoteObjectsOLD  = parseVexflowNoteArray(notesInVexflowFormatOLD)
+        //const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjectsOLD);
+        //const vexflowNoteObjectArrayHtmlStringOLD = generateVexflowNoteObjectArrayHtmlStringOLD(parsedVexflowNoteObjectsOLD);
 
-        console.log(parsedVexflowNoteObjectsOLD[0].string)
+        const vexflowNoteObjectArrayHtmlString  = generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray)
+
+        //console.log(parsedVexflowNoteObjectsOLD[0].string)
         // Launch the browser and open a new blank page
         const page = await browser.newPage();
         
@@ -141,11 +143,11 @@ const vexflowNoteRender = async (req, res) => {
             isBase64Encoded: true,
         };
 
-        //res.type('image/png').send(imageBuffer);
+        res.type('image/png').send(imageBuffer);
 
-        const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormatOLD || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
+        //const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormatOLD || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
 
-        res.send(queryDetails);
+        //res.send(queryDetails);
     } catch(e) {
         console.error(e);
         res.send(`Something went wrong: ${e}`)
@@ -261,10 +263,14 @@ const vexflowNoteRender = async (req, res) => {
 function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
     const { parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest);
     const { vexflowNotes, vexflowAccidentals, vexflowRests } = processParsedNoteRequestSyntaxToVexflow(parsedNotes);
-    //durations include rest data
-    const { vexflowDurations } = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests);
+    
+    //vexflow durations include rest data
+    const vexflowDurations = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests);
     const vexflowClef = parsedClef;
-    const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowDurations, vexflowClef)
+    const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowDurations, vexflowClef);
+    
+    console.log(vexflowNoteObjectArray);
+    return vexflowNoteObjectArray;
 }
 
 /** PROCESS NOTES FOR VEXFLOW */
@@ -273,6 +279,7 @@ function processParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
     const  { vexflowNotes, vexflowRests} = convertNotesAndRestsFromParsedNoteRequestToVexflow(parsedNotes)
     const vexflowAccidentals = extractAccidentals(vexflowNotes)
 
+    console.log('vexflowNotes, Accidentals, Rests', vexflowNotes, vexflowAccidentals, vexflowRests)
     return { vexflowNotes, vexflowAccidentals, vexflowRests}
 }
 
@@ -310,6 +317,8 @@ function processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests) {
     const vexflowDurations = parsedRhythm.map((note, index) => {
         return vexflowRests[index] == 'n' ? note : note+'r';
     })
+
+    console.log('vexflowDurations', vexflowDurations)
     return vexflowDurations;
 }
 
@@ -319,19 +328,40 @@ function processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests) {
  */
 
 function packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowDurations, vexflowClef) {
+    console.log(vexflowDurations)
     let vexflowNoteObjectArray = [];
-    for (var i = 0; i < vexflowNotes; i++) {
+    for (var i = 0; i < vexflowNotes.length; i++) {
+        console.log(vexflowNotes[i])
         let note = {};
         note.key = vexflowNotes[i];
-        note.accidental = vexflowAccidentals[i];
+        note.accidental = vexflowAccidentals[i] ?? null;
         note.duration = vexflowDurations[i];
         note.clef = vexflowClef;
 
         vexflowNoteObjectArray.push(note);
     };
 
+    console.log('vexflowNoteObjectArray', vexflowNoteObjectArray)
     return vexflowNoteObjectArray;
 }
+
+
+
+
+function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
+    const htmlString = vexflowNoteObjectArray.map(noteObj => {
+        let newNoteString = `new StaveNote({keys: ['${noteObj.key}'], duration: '${noteObj.duration}', clef: '${noteObj.clef}'})`
+        if (noteObj.accidental) {
+            newNoteString  += `.addModifier(new Accidental('${noteObj.accidental}'))`
+        }
+        return newNoteString
+    }).join();
+
+    console.log(htmlString);
+    return htmlString;
+};
+
+
 
 
 
@@ -386,6 +416,7 @@ function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadR
     const {parsedNotes, parsedNoteSeparators} = parseNoteRequest(noteRequest);
     const { parsedRhythm, parsedRhythmSeparators } = parseRhythmRequest(rhythmRequest);
     const parsedClef = parseClefRequest(clefRequest);
+    console.log(parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef)
     return {parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef}
 };
 
@@ -574,7 +605,7 @@ function parseVexflowNoteArray(vexflowNoteArray){
 
 
 
-function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
+function generateVexflowNoteObjectArrayHtmlStringOLD(vexflowNoteObjectArray) {
     const htmlString = vexflowNoteObjectArray.map(noteObj => {
         let newNoteString = `new StaveNote({keys: ['${noteObj.string}'], duration: 'h'})`
         if (noteObj.accidental) {
