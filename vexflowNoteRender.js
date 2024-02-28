@@ -45,14 +45,14 @@ const vexflowNoteRender = async (req, res) => {
     });
 
     try {
-        const {} = convertRequestSyntaxToVexflow(notes, rhythm, articulations, noteheads, clef, key, time, scale)
+        //const {} = convertRequestSyntaxToVexflow(notes, rhythm, articulations, noteheads, clef, key, time, scale)
 
         const notesInVexflowFormatOLD = reformatNoteRequest(notes);
         const parsedVexflowNoteObjectsOLD  = parseVexflowNoteArray(notesInVexflowFormatOLD)
         const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjectsOLD);
         const vexflowNoteObjectArrayHtmlString = generateVexflowNoteObjectArrayHtmlString(parsedVexflowNoteObjectsOLD);
 
-        console.log(parsedVexflowNoteObjects[0].string)
+        console.log(parsedVexflowNoteObjectsOLD[0].string)
         // Launch the browser and open a new blank page
         const page = await browser.newPage();
         
@@ -143,7 +143,7 @@ const vexflowNoteRender = async (req, res) => {
 
         //res.type('image/png').send(imageBuffer);
 
-        const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormat || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
+        const queryDetails  = `vexflowNoteRender received notes: ${notesInVexflowFormatOLD || null}, rhythm: ${rhythm || null}, clef: ${clef || null}, scale: ${scale || null}!`
 
         res.send(queryDetails);
     } catch(e) {
@@ -417,9 +417,14 @@ function extractSeparatorsFromNoteRequest(noteRequest) {
 	return requestedNoteSeparators;
 };
 
+/** Logic for parsing the rhythm request */
+function parseRhythmRequest(rhythmRequest) {
+    validateRhythmRequestSyntax(rhythmRequest); //throws an error if invalid syntax
+}
 
-
-
+function validateRhythmRequestSyntax(rhythmRequest) {
+    const rxValidRhythmRequestSyntax = /h/g;
+}
 
 /** BEGIN OLD PARSING LOGIC (slowly deprecating old parsing logic...)*/
 function reformatNoteRequest(noteReq)  {
