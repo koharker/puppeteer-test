@@ -259,12 +259,15 @@ const vexflowNoteRender = async (req, res) => {
 */
 
 function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
-    const { parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
+    const { parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest);
     const { vexflowNotes, vexflowAccidentals, vexflowRests } = processParsedNoteRequestSyntaxToVexflow(parsedNotes);
-    const { vexflowDurations } = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests)
-    const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowRests, vexflowDurations)
+    //durations include rest data
+    const { vexflowDurations } = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests);
+    const vexflowClef = parsedClef;
+    const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowDurations, vexflowClef)
 }
 
+/** PROCESS NOTES FOR VEXFLOW */
 // Main function to process notes and clef
 function processParsedNoteRequestSyntaxToVexflow(parsedNotes)  {
     const  { vexflowNotes, vexflowRests} = convertNotesAndRestsFromParsedNoteRequestToVexflow(parsedNotes)
@@ -311,7 +314,24 @@ function processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests) {
 }
 
 
+/** Logic for packaging note, rest, accidental, duration, articulation,
+ * notehead, and clef info into a vexflow note object
+ */
 
+function packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowDurations, vexflowClef) {
+    let vexflowNoteObjectArray = [];
+    for (var i = 0; i < vexflowNotes; i++) {
+        let note = {};
+        note.key = vexflowNotes[i];
+        note.accidental = vexflowAccidentals[i];
+        note.duration = vexflowDurations[i];
+        note.clef = vexflowClef;
+
+        vexflowNoteObjectArray.push(note);
+    };
+
+    return vexflowNoteObjectArray;
+}
 
 
 
