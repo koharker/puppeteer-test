@@ -18,7 +18,7 @@ const {
 const vexflowNoteRender = async (req, res) => {
     const {
         notes = 'c4',
-        rhythm = 'h',
+        rhythm = 'w',
         articulations = '',
         noteheads = '',  //see vexflow.js for types. search for "V.validTypes" and "static codeNoteHead()"
         clef = 'treble',
@@ -366,7 +366,7 @@ function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadR
     const {parsedNotes, parsedNoteSeparators} = parseNoteRequest(noteRequest);
     const { parsedRhythm, parsedRhythmSeparators } = parseRhythmRequest(rhythmRequest);
     const parsedClef = parseClefRequest(clefRequest);
-    return {parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators}
+    return {parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators, parsedClef}
 };
 
 
@@ -462,8 +462,35 @@ function extractSeparatorsFromRhythmRequest(rhythmRequest) {
 };
 
 
+/** PARSE CLEF REQUEST - Logic for parsing clef request */
+function parseClefRequest(clefRequest){
+    const sanitizedClefRequest = clefRequest.toLowerCase();
+    validateClefRequestSyntax(sanitizedClefRequest);
+    return sanitizedClefRequest;
+};
 
+function validateClefRequestSyntax(clefRequest) {
+    const validClefs = [
+        'treble',
+        'bass',
+        'alto',
+        'tenor',
+        'percussion',
+        'soprano',
+        'mezzo-soprano',
+        'baritone-c',
+        'baritone-f',
+        'subbass',
+        'french',
+        'tab'
+    ];
 
+    if(!validClefs.includes(clefRequest)) {
+        throw new Error(
+            `Clef request contains invalid syntax: ${clefRequest} is invalid.`
+        );
+    };
+};
 
 
 /** BEGIN OLD PARSING LOGIC (slowly deprecating old parsing logic...)*/
