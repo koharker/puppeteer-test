@@ -364,11 +364,64 @@ console.log(vexflowRests);
 /** logic for parsing http request */
 function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
     const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
+    const parsedRhythm = parseRhythmRequest(rhythmRequest);
     return {parsedNotes, parsedSeparators, parsedRhythm}
 };
 
 
+/** Logic for parsing the note request */
 
+function parseNoteRequest(noteRequest) {
+    validateNoteRequestSyntax(noteRequest);  //throws an error if note request
+    const { extractedNotes, extractedSeparators } = extractNotesAndSeparatorsFromNoteRequest(noteRequest);
+    const [parsedNotes, parsedSeparators] = [extractedNotes, extractedSeparators];
+    return {parsedNotes, parsedSeparators}
+};
+
+function validateNoteRequestSyntax(noteRequest) {
+    const rxValidNoteRequestSyntax = /^(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r)((,|t|s|\||~|l)(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r))*$/g
+    if(!rxValidNoteRequestSyntax.test(noteRequest)) {
+        throw new Error(
+            `Note request contains invalid syntax: ${noteRequest} is invalid.`
+        )
+    }
+}
+
+function extractNotesAndSeparatorsFromNoteRequest(noteRequest)  {
+    const parsedNotes = extractNotesFromNoteRequest(noteRequest);
+    const parsedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
+    return {parsedNotes, parsedSeparators};
+};
+
+function extractNotesFromNoteRequest(noteRequest) {
+    const rxValidNoteSyntax = /([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r/g
+    const notes = noteRequest.match(rxValidNoteSyntax);
+    return notes;
+};
+
+function extractSeparatorsFromNoteRequest(noteRequest) {
+    const validNoteSeparators = [
+        ',', //default separatorindicating a new note in the sequence
+        't', //connects sequential notes with a tie
+        's', //connects sequential notes with a slur
+        'l', //connects sequential notes with a solid line
+        '~', //connects sequential notes with a gliss
+        '|', //connects sequential notes with a barline
+        ';'  //starts a new sequence of notes in another voice
+    ];
+
+    const validNoteSeparatorRegExpString = escapeRegExpChars(validNoteSeparators).join('|');
+    const rxValidNoteSeparators = new RegExp(validNoteSeparatorRegExpString, 'g');
+    const requestedNoteSeparators = noteRequest.match(rxValidNoteSeparators);
+
+	return requestedNoteSeparators;
+};
+
+
+
+
+
+/** BEGIN OLD PARSING LOGIC (slowly deprecating old parsing logic...)*/
 function reformatNoteRequest(noteReq)  {
     const sanitizedNoteRequest =  sanitizeNoteRequest(noteReq);
     const noteArrayInVexflowSyntax  =  changeNoteRequestSyntaxToVexflow(sanitizedNoteRequest)
@@ -441,60 +494,13 @@ function generateVexflowNoteObjectArrayHtmlString(vexflowNoteObjectArray) {
     console.log(htmlString);
     return htmlString;
 };
+/** END OLD PARSING LOGIC */
 
 
 
-/** Logic for parsing the note request */
 
 
-function parseNoteRequest(noteRequest) {
-    validateNoteRequestSyntax(noteRequest);  //throws an error if note request
-    const { extractedNotes, extractedSeparators } = extractNotesAndSeparatorsFromNoteRequest(noteRequest);
-    const [parsedNotes, parsedSeparators] = [extractedNotes, extractedSeparators];
-    return {parsedNotes, parsedSeparators}
-};
-
-function validateNoteRequestSyntax(noteRequest) {
-    const rxValidNoteRequestSyntax = /^(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r)((,|t|s|\||~|l)(([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r))*$/g
-    if(!rxValidNoteRequestSyntax.test(noteRequest)) {
-        throw new Error(
-            `Note request contains invalid syntax: ${noteRequest} is invalid.`
-        )
-    }
-}
-
-function extractNotesAndSeparatorsFromNoteRequest(noteRequest)  {
-    const parsedNotes = extractNotesFromNoteRequest(noteRequest);
-    const parsedSeparators = extractSeparatorsFromNoteRequest(noteRequest);
-    return {parsedNotes, parsedSeparators};
-};
-
-function extractNotesFromNoteRequest(noteRequest) {
-    const rxValidNoteSyntax = /([a-g](b{0,2}?|\*{0,2}?|n{0,1}?)\d)|r/g
-    const notes = noteRequest.match(rxValidNoteSyntax);
-    return notes;
-};
-
-function extractSeparatorsFromNoteRequest(noteRequest) {
-    const validNoteSeparators = [
-        ',', //default separatorindicating a new note in the sequence
-        't', //connects sequential notes with a tie
-        's', //connects sequential notes with a slur
-        'l', //connects sequential notes with a solid line
-        '~', //connects sequential notes with a gliss
-        '|', //connects sequential notes with a barline
-        ';'  //starts a new sequence of notes in another voice
-    ];
-
-    const validNoteSeparatorRegExpString = escapeRegExpChars(validNoteSeparators).join('|');
-    const rxValidNoteSeparators = new RegExp(validNoteSeparatorRegExpString, 'g');
-    const requestedNoteSeparators = noteRequest.match(rxValidNoteSeparators);
-
-	return requestedNoteSeparators;
-};
-
-
-
+/** GENERAL FUNCTIONS */
 
 /**
  * Escapes RegExp special characters within strings. This function can take multiple arguments,
