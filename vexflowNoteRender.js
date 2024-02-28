@@ -13,6 +13,21 @@ const {
     StaveLine
 } = Vex.Flow;
 
+/** DEFAULT IMAGE RENDER SETTINGS - renders 2 notes with standard padding around staff */
+const defaultImageRenderSettings = {
+    vexflowRenderContext: {
+        resizeWidth: 161,
+        resizeHeight: 110
+    },
+    vexflowStaff: {
+        x: 10,
+        y: -5,
+        width: 150
+    },
+    screenshotClipSettings: { 
+        x: 8, y: 8, width: 171, height: 112
+    }
+}
 
 
 const vexflowNoteRender = async (req, res) => {
