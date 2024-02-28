@@ -19,7 +19,11 @@ const vexflowNoteRender = async (req, res) => {
     const {
         notes = 'c4',
         rhythm = 'h',
+        articulations = '',
+        noteheads = '',  //see vexflow.js for types. search for "V.validTypes" and "static codeNoteHead()"
         clef = 'treble',
+        key = 'C',
+        time = '',
         scale = 1
     }  =  req.query;
 
@@ -41,10 +45,12 @@ const vexflowNoteRender = async (req, res) => {
     });
 
     try {
-        const notesInVexflowFormat = reformatNoteRequest(notes);
-        const parsedVexflowNoteObjects  = parseVexflowNoteArray(notesInVexflowFormat)
-        const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjects);
-        const vexflowNoteObjectArrayHtmlString = generateVexflowNoteObjectArrayHtmlString(parsedVexflowNoteObjects);
+        const {} = convertRequestSyntaxToVexflow(notes, rhythm, articulations, noteheads, clef, key, time, scale)
+
+        const notesInVexflowFormatOLD = reformatNoteRequest(notes);
+        const parsedVexflowNoteObjectsOLD  = parseVexflowNoteArray(notesInVexflowFormatOLD)
+        const vexflowNoteObjectPackage = packageVexflowNoteObjectArray(parsedVexflowNoteObjectsOLD);
+        const vexflowNoteObjectArrayHtmlString = generateVexflowNoteObjectArrayHtmlString(parsedVexflowNoteObjectsOLD);
 
         console.log(parsedVexflowNoteObjects[0].string)
         // Launch the browser and open a new blank page
@@ -252,9 +258,11 @@ const vexflowNoteRender = async (req, res) => {
 
 */
 
-function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
-    const { parsedNotes, parsedSeparators, parsedRhythm, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
+function convertRequestSyntaxToVexflow(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)  {
+    const { parsedNotes, parsedSeparators, parsedRhythm, parsedClef, parsedKey, parsedTime, parsedScale } =  parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest)
     const { vexflowNotes, vexflowAccidentals, vexflowRests } = processParsedNoteRequestSyntaxToVexflow(parsedNotes);
+    const { vexflowDurations } = processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests)
+    const vexflowNoteObjectArray = packageVexflowNotes(vexflowNotes, vexflowAccidentals, vexflowRests, vexflowDurations)
 }
 
 // Main function to process notes and clef
@@ -293,6 +301,19 @@ function extractAccidentals(parsedNotes) {
     })
     return vexflowAccidentals
 }
+
+/** Logic for converting rhythm request to Vexflow durations */
+function processParsedRhythmSyntaxToVexflow(parsedRhythm, vexflowRests) {
+    const vexflowDurations = parsedRhythm.map((note, index) => {
+        return vexflowRests[index] == 'n' ? note : note+'r';
+    })
+    return vexflowDurations;
+}
+
+
+
+
+
 
 // Transposes a single note based on the clef
 function transposeNote(note, clef) {
@@ -337,20 +358,11 @@ console.log(vexflowRests);
 
 
 
-function blahblah(parsedNotes) {
-    const notesInVexflowNoteSyntax = parsedNotes.map(note => {
-        return convertNotesToVexflowNoteSyntax(note)
-    })
-    //transposeNotesToVexflowOctave
-}
-
-
-
 
 
 
 /** logic for parsing http request */
-function parseRequest(noteRequest, rhythmRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
+function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
     const {parsedNotes, parsedSeparators} = parseNoteRequest(noteRequest);
     return {parsedNotes, parsedSeparators, parsedRhythm}
 };
