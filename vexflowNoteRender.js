@@ -365,6 +365,7 @@ console.log(vexflowRests);
 function parseRequest(noteRequest, rhythmRequest, articulationRequest, noteheadRequest, clefRequest, keyRequest, timeRequest, scaleRequest) {
     const {parsedNotes, parsedNoteSeparators} = parseNoteRequest(noteRequest);
     const { parsedRhythm, parsedRhythmSeparators } = parseRhythmRequest(rhythmRequest);
+    const parsedClef = parseClefRequest(clefRequest);
     return {parsedNotes, parsedNoteSeparators, parsedRhythm, parsedRhythmSeparators}
 };
 
@@ -459,6 +460,9 @@ function extractSeparatorsFromRhythmRequest(rhythmRequest) {
 
 	return requestedRhythmSeparators;
 };
+
+
+
 
 
 
