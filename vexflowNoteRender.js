@@ -13,6 +13,12 @@ const {
     StaveLine
 } = Vex.Flow;
 
+
+/** RENDER WIDTH OF VEXFLOW ELEMENTS */
+const vexflowElemRenderWidth = {
+    ['#']: 11
+}
+console.log(vexflowElemRenderWidth["#"])
 /** DEFAULT IMAGE RENDER SETTINGS - renders 2 notes with standard padding around staff */
 const defaultImageRenderSettings = {
     vexflowRenderContext: {
