@@ -14,10 +14,25 @@ const {
 } = Vex.Flow;
 
 
-/** RENDER WIDTH OF VEXFLOW ELEMENTS */
+/** RENDER WIDTH OF VEXFLOW ELEMENTS - vexflowElemRenderWidth - add and subtract these widths from stave(x,y, WIDTH) to keep
+ * the staff the same width when you add or remove elements to it.
+*/
 const vexflowElemRenderWidth = {
-    ['#']: 11
+    ['#']: 11,
+    b: 10,
+    keySigBuffer: 9.5, // width for key signatures = (noOfAccidentals x accidental) + keySigBuffer
+    clef: 36, //all clefs same width
+    //time sig width is always the width of the WIDEST symbol
+    2: 29.5,
+    3: 28.5,
+    4: 30,
+    8: 29,
+    10: 40.25,
+    11: 34,
+    16: 39.25,
+    C: 32,
 }
+
 console.log(vexflowElemRenderWidth["#"])
 /** DEFAULT IMAGE RENDER SETTINGS - renders 2 notes with standard padding around staff */
 const defaultImageRenderSettings = {
